@@ -25,6 +25,7 @@ import (
 	cmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 )
 
@@ -192,7 +193,12 @@ func ToMessageNoNonceCheck(tx *types.Transaction, s types.Signer, baseFee *big.I
 // indicates a core error meaning that the message would always fail for that particular
 // state and would never be accepted within a block.
 func ApplyMessage(evm *vm.EVM, msg *Message, gp *GasPool) (*ExecutionResult, error) {
-	return NewStateTransition(evm, msg, gp).TransitionDb()
+	return NewStateTransition(evm, msg, gp).TransitionDb(nil)
+}
+
+// Enhanced ApplyMessage
+func ApplyMessageEnhanced(evm *vm.EVM, msg *Message, gp *GasPool, tx *types.Transaction) (*ExecutionResult, error) {
+	return NewStateTransition(evm, msg, gp).TransitionDb(tx)
 }
 
 // StateTransition represents a state transition.
@@ -352,13 +358,13 @@ func (st *StateTransition) preCheck() error {
 //
 // However if any consensus issue encountered, return the error directly with
 // nil evm execution result.
-func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
+func (st *StateTransition) TransitionDb(tx *types.Transaction) (*ExecutionResult, error) {
 	if mint := st.msg.Mint; mint != nil {
 		st.state.AddBalance(st.msg.From, mint)
 	}
 	snap := st.state.Snapshot()
 
-	result, err := st.innerTransitionDb()
+	result, err := st.innerTransitionDb(tx)
 	// Failed deposits must still be included. Unless we cannot produce the block at all due to the gas limit.
 	// On deposit failure, we rewind any state changes from after the minting, and increment the nonce.
 	if err != nil && err != ErrGasLimitReached && st.msg.IsDepositTx {
@@ -383,7 +389,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	return result, err
 }
 
-func (st *StateTransition) innerTransitionDb() (*ExecutionResult, error) {
+func (st *StateTransition) innerTransitionDb(tx *types.Transaction) (*ExecutionResult, error) {
 	// First check this message satisfies all consensus rules before
 	// applying the message. The rules include these clauses
 	//
@@ -395,6 +401,9 @@ func (st *StateTransition) innerTransitionDb() (*ExecutionResult, error) {
 	// 6. caller has enough balance to cover asset transfer for **topmost** call
 
 	// Check clauses 1-3, buy gas if everything is correct
+	if tx != nil {
+		log.Info("Krish debug 1.1: step into innerTransitionDb")
+	}
 	if err := st.preCheck(); err != nil {
 		return nil, err
 	}
@@ -444,17 +453,22 @@ func (st *StateTransition) innerTransitionDb() (*ExecutionResult, error) {
 	)
 	if contractCreation {
 		ret, _, st.gasRemaining, vmerr = st.evm.Create(sender, msg.Data, st.gasRemaining, msg.Value)
+		log.Info("Krish debug 1.2: step into contractCreation", "txhash", tx.Hash().String())
 	} else {
 		// Increment the nonce for the next transaction
+		log.Info("Krish debug 1.3: step into normal contract", "txhash", tx.Hash().String())
 		st.state.SetNonce(msg.From, st.state.GetNonce(sender.Address())+1)
 		ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
 	}
+
+	log.Info("Krish debug 1.4: vmerr", "txhash", tx.Hash().String(), "vmerr", vmerr, "gasRemaining", st.gasRemaining)
 
 	// if deposit: skip refunds, skip tipping coinbase
 	// Regolith changes this behaviour to report the actual gasUsed instead of always reporting all gas used.
 	if st.msg.IsDepositTx && !rules.IsOptimismRegolith {
 		// Record deposits as using all their gas (matches the gas pool)
 		// System Transactions are special & are not recorded as using any gas (anywhere)
+		log.Info("Krish debug 1.5: step into IsDepositTx", "txhash", tx.Hash().String())
 		gasUsed := st.msg.GasLimit
 		if st.msg.IsSystemTx {
 			gasUsed = 0
@@ -477,6 +491,8 @@ func (st *StateTransition) innerTransitionDb() (*ExecutionResult, error) {
 	}
 	if st.msg.IsDepositTx && rules.IsOptimismRegolith {
 		// Skip coinbase payments for deposit tx in Regolith
+		log.Info("Krish debug 1.6: step into return logic: IsDepositTx", "txhash", tx.Hash().String(), "vmerr", vmerr)
+
 		return &ExecutionResult{
 			UsedGas:    st.gasUsed(),
 			Err:        vmerr,
@@ -507,6 +523,7 @@ func (st *StateTransition) innerTransitionDb() (*ExecutionResult, error) {
 		}
 	}
 
+	log.Info("Krish debug 1.7: berofe return", "txhash", tx.Hash().String(), "vmerr", vmerr)
 	return &ExecutionResult{
 		UsedGas:    st.gasUsed(),
 		Err:        vmerr,
