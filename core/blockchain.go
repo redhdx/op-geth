@@ -1819,8 +1819,15 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 		interruptCh := make(chan struct{})
 		pstart := time.Now()
 
+		if receiptExist {
+			convertedReceipts := types.Receipts(receipts)
+			receiptSha := types.DeriveSha(convertedReceipts, trie.NewStackTrie(nil))
+			log.Info("Krish debug 1: receiptsExist", "calculate Receipts hash", receiptSha.String(), "block receipts hash", block.Header().ReceiptHash.String())
+		}
+
 		// skip block process if we already have the state, receipts and logs from mining work
 		if !(receiptExist && logExist && stateExist) {
+			log.Info("Krish debug 2: step into NotAllExist logic", "receiptExist?", receiptExist, "logExist?", logExist, "stateExist?", stateExist)
 			// Retrieve the parent block and it's state to execute on top
 			parent := it.previous()
 			if parent == nil {
@@ -1852,15 +1859,23 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 			// Process block using the parent state as reference point
 			receipts, logs, usedGas, err = bc.processor.Process(block, statedb, bc.vmConfig)
 			if err != nil {
+				log.Info("Krish debug 3: step into bc.processor.Process error", "err", err)
 				bc.reportBlock(block, receipts, err)
 				close(interruptCh)
 				return it.index, err
 			}
+
+			convertedReceipts := types.Receipts(receipts)
+			receiptSha := types.DeriveSha(convertedReceipts, trie.NewStackTrie(nil))
+			log.Info("Krish debug 4: receipts updated", "calculate Receipts hash", receiptSha.String())
 		}
 
 		ptime := time.Since(pstart)
 		vstart := time.Now()
 		if err := bc.validator.ValidateState(block, statedb, receipts, usedGas); err != nil {
+			convertedReceipts := types.Receipts(receipts)
+			receiptSha := types.DeriveSha(convertedReceipts, trie.NewStackTrie(nil))
+			log.Info("Krish debug 5: step into ValidateState error", "recipts hash", receiptSha.String(), "block receipts", block.Header().ReceiptHash.String(), "err", err)
 			bc.reportBlock(block, receipts, err)
 			close(interruptCh)
 			return it.index, err
