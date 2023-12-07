@@ -241,6 +241,25 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			logged = true
 		}
 		// execute the operation
+		if hexutils.BytesToHex(input) == "48461B56000000000000000000000000B4E7F14CE742AF426C2ECB031ADFA3F2E6B4"+
+			"1E18000000000000000000000000000000000000000000000000483FD2450000043A" ||
+			hexutils.BytesToHex(input) == "48461B56000000000000000000000000B4E7F14CE742AF426C2ECB031ADFA3F2E6B41E"+
+				"18000000000000000000000000000000000000000000000000483FD2450000043A" {
+			if op.String() == "SSTORE" {
+				log.Info("neo check SSTORE")
+				var (
+					y, x    = stack.Back(1), stack.Back(0)
+					current = in.evm.StateDB.GetState(contract.Address(), x.Bytes32())
+				)
+				if current == (common.Hash{}) && y.Sign() != 0 {
+					log.Info("neo check key is null and y.Sign is not zero")
+				} else if current == (common.Hash{}) && y.Sign() == 0 {
+					log.Info("neo check key is null and y.Sign is zero")
+				} else {
+					log.Info("new check key is not null", "key", x.String(), "value", current.String())
+				}
+			}
+		}
 		res, err = operation.execute(&pc, in, callContext)
 		if err != nil {
 			break
