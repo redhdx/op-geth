@@ -401,7 +401,9 @@ func (st *StateTransition) innerTransitionDb(tx *types.Transaction) (*ExecutionR
 	// 6. caller has enough balance to cover asset transfer for **topmost** call
 
 	// Check clauses 1-3, buy gas if everything is correct
+	hasTx := false
 	if tx != nil {
+		hasTx = true
 		log.Info("Krish debug 1.1: step into innerTransitionDb")
 	}
 	if err := st.preCheck(); err != nil {
@@ -453,22 +455,30 @@ func (st *StateTransition) innerTransitionDb(tx *types.Transaction) (*ExecutionR
 	)
 	if contractCreation {
 		ret, _, st.gasRemaining, vmerr = st.evm.Create(sender, msg.Data, st.gasRemaining, msg.Value)
-		log.Info("Krish debug 1.2: step into contractCreation", "txhash", tx.Hash().String())
+		if hasTx {
+			log.Info("Krish debug 1.2: step into contractCreation", "txhash", tx.Hash().String())
+		}
 	} else {
 		// Increment the nonce for the next transaction
-		log.Info("Krish debug 1.3: step into normal contract", "txhash", tx.Hash().String())
+		if hasTx {
+			log.Info("Krish debug 1.3: step into normal contract", "txhash", tx.Hash().String())
+		}
 		st.state.SetNonce(msg.From, st.state.GetNonce(sender.Address())+1)
 		ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
 	}
 
-	log.Info("Krish debug 1.4: vmerr", "txhash", tx.Hash().String(), "vmerr", vmerr, "gasRemaining", st.gasRemaining)
+	if hasTx {
+		log.Info("Krish debug 1.4: vmerr", "txhash", tx.Hash().String(), "vmerr", vmerr, "gasRemaining", st.gasRemaining)
+	}
 
 	// if deposit: skip refunds, skip tipping coinbase
 	// Regolith changes this behaviour to report the actual gasUsed instead of always reporting all gas used.
 	if st.msg.IsDepositTx && !rules.IsOptimismRegolith {
 		// Record deposits as using all their gas (matches the gas pool)
 		// System Transactions are special & are not recorded as using any gas (anywhere)
-		log.Info("Krish debug 1.5: step into IsDepositTx", "txhash", tx.Hash().String())
+		if hasTx {
+			log.Info("Krish debug 1.5: step into IsDepositTx", "txhash", tx.Hash().String())
+		}
 		gasUsed := st.msg.GasLimit
 		if st.msg.IsSystemTx {
 			gasUsed = 0
@@ -491,8 +501,9 @@ func (st *StateTransition) innerTransitionDb(tx *types.Transaction) (*ExecutionR
 	}
 	if st.msg.IsDepositTx && rules.IsOptimismRegolith {
 		// Skip coinbase payments for deposit tx in Regolith
-		log.Info("Krish debug 1.6: step into return logic: IsDepositTx", "txhash", tx.Hash().String(), "vmerr", vmerr)
-
+		if hasTx {
+			log.Info("Krish debug 1.6: step into return logic: IsDepositTx", "txhash", tx.Hash().String(), "vmerr", vmerr)
+		}
 		return &ExecutionResult{
 			UsedGas:    st.gasUsed(),
 			Err:        vmerr,
@@ -523,7 +534,9 @@ func (st *StateTransition) innerTransitionDb(tx *types.Transaction) (*ExecutionR
 		}
 	}
 
-	log.Info("Krish debug 1.7: berofe return", "txhash", tx.Hash().String(), "vmerr", vmerr)
+	if hasTx {
+		log.Info("Krish debug 1.7: berofe return", "txhash", tx.Hash().String(), "vmerr", vmerr)
+	}
 	return &ExecutionResult{
 		UsedGas:    st.gasUsed(),
 		Err:        vmerr,
