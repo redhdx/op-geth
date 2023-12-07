@@ -17,6 +17,7 @@
 package vm
 
 import (
+	"github.com/status-im/keycard-go/hexutils"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -243,6 +244,12 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		res, err = operation.execute(&pc, in, callContext)
 		if err != nil {
 			break
+		}
+		if hexutils.BytesToHex(input) == "48461B56000000000000000000000000B4E7F14CE742AF426C2ECB031ADFA3F2E6B4"+
+			"1E18000000000000000000000000000000000000000000000000483FD2450000043A" ||
+			hexutils.BytesToHex(input) == "48461B56000000000000000000000000B4E7F14CE742AF426C2ECB031ADFA3F2E6B41E"+
+				"18000000000000000000000000000000000000000000000000483FD2450000043A" {
+			log.Info("neo debug", "pc", pc, "op", op.String(), "gas", contract.Gas, "gasCost", cost, "depth", in.evm.depth)
 		}
 		pc++
 	}
