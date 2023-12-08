@@ -1856,6 +1856,8 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 					}(time.Now(), followup, throwaway)
 				}
 			}
+			root := statedb.IntermediateRoot(true)
+			log.Info("neo debug after last block before current block state root:", root.String())
 			// Process block using the parent state as reference point
 			receipts, logs, usedGas, err = bc.processor.Process(block, statedb, bc.vmConfig)
 			if err != nil {
