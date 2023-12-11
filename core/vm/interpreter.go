@@ -256,7 +256,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 				} else if current == (common.Hash{}) && y.Sign() == 0 {
 					log.Info("neo check key is null and y.Sign is zero")
 				} else {
-					log.Info("new check key is not null", "key", x.String(), "value", current.String())
+					log.Info("neo check key is not null", "key", x, "value", current)
+					log.Info("neo check key is not null", "key", x.String(), "value", current.String())
 				}
 			}
 		}

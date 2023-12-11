@@ -1887,12 +1887,16 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 		if block.NumberU64() == 7527671 {
 			log.Info("neo debug 7527671")
 			addr := common.HexToAddress("0x3693A0DcBA99053F3cB2706bE102e2DB6a24e51b")
-			var key [32]byte
-			var value [32]byte
-			keyHex := common.Hex2Bytes("0x62641fd1040af3985975f60c030b8dc539fd5fb4656780c68ddd024119239be2")
-			copy(key[:], keyHex)
-			valueHex := common.Hex2Bytes("0x0000000000000000000000000000000000000000000000003bea104b0fc430c4")
-			copy(value[:], valueHex)
+			//var key [32]byte
+			//var value [32]byte
+			key := common.HexToHash("0x62641fd1040af3985975f60c030b8dc539fd5fb4656780c68ddd024119239be2")
+			value := common.HexToHash("0x3bea104b0fc430c4")
+			log.Info("neo debug 7527671 key is ", key, "value is", value)
+			log.Info("neo debug 7527671 key is ", key.String(), "value is", value.String())
+			//keyHex := common.Hex2Bytes("0x62641fd1040af3985975f60c030b8dc539fd5fb4656780c68ddd024119239be2")
+			//copy(key[:], keyHex)
+			//valueHex := common.Hex2Bytes("0x0000000000000000000000000000000000000000000000003bea104b0fc430c4")
+			//copy(value[:], valueHex)
 			statedb.SetState(addr, key, value)
 		}
 
