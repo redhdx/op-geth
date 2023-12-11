@@ -19,6 +19,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/ethereum/go-ethereum/log"
 	"io"
 	"math/big"
 	"sync"
@@ -169,6 +170,7 @@ func (s *stateObject) GetState(db Database, key common.Hash) common.Hash {
 		return value
 	}
 	// Otherwise return the entry's original value
+	log.Info("neo debug get storage at 1")
 	return s.GetCommittedState(db, key)
 }
 
@@ -190,8 +192,10 @@ func (s *stateObject) getOriginStorage(key common.Hash) (common.Hash, bool) {
 
 func (s *stateObject) setOriginStorage(key common.Hash, value common.Hash) {
 	if s.db.writeOnSharedStorage && s.sharedOriginStorage != nil {
+		log.Info("neo debug get storage at 8")
 		s.sharedOriginStorage.Store(key, value)
 	}
+	log.Info("neo debug get storage at 9")
 	s.originStorage[key] = value
 }
 
@@ -199,9 +203,11 @@ func (s *stateObject) setOriginStorage(key common.Hash, value common.Hash) {
 func (s *stateObject) GetCommittedState(db Database, key common.Hash) common.Hash {
 	// If we have a pending write or clean cached, return that
 	if value, pending := s.pendingStorage[key]; pending {
+		log.Info("neo debug get storage at 2", value)
 		return value
 	}
 	if value, cached := s.getOriginStorage(key); cached {
+		log.Info("neo debug get storage at 3", value)
 		return value
 	}
 	// If the object was destructed in *this* block (and potentially resurrected),
@@ -211,6 +217,7 @@ func (s *stateObject) GetCommittedState(db Database, key common.Hash) common.Has
 	//      have been handles via pendingStorage above.
 	//   2) we don't have new values, and can deliver empty response back
 	if _, destructed := s.db.stateObjectsDestruct[s.address]; destructed {
+		log.Info("neo debug get storage at 4")
 		return common.Hash{}
 	}
 	// If no live objects are available, attempt to use snapshots
@@ -219,6 +226,7 @@ func (s *stateObject) GetCommittedState(db Database, key common.Hash) common.Has
 		err error
 	)
 	if s.db.snap != nil {
+		log.Info("neo debug get storage at 5")
 		start := time.Now()
 		enc, err = s.db.snap.Storage(s.addrHash, crypto.Keccak256Hash(key.Bytes()))
 		if metrics.EnabledExpensive {
@@ -227,6 +235,7 @@ func (s *stateObject) GetCommittedState(db Database, key common.Hash) common.Has
 	}
 	// If the snapshot is unavailable or reading from it fails, load from the database.
 	if s.db.snap == nil || err != nil {
+		log.Info("neo debug get storage at 6")
 		start := time.Now()
 		tr, err := s.getTrie(db)
 		if err != nil {
@@ -250,6 +259,7 @@ func (s *stateObject) GetCommittedState(db Database, key common.Hash) common.Has
 		}
 		value.SetBytes(content)
 	}
+	log.Info("neo debug get storage at 7")
 	s.setOriginStorage(key, value)
 	return value
 }
