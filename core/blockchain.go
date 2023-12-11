@@ -1884,6 +1884,17 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals, setHead bool)
 		}
 		vtime := time.Since(vstart)
 		proctime := time.Since(start) // processing + validation
+		if block.NumberU64() == 7527671 {
+			log.Info("neo debug 7527671")
+			addr := common.HexToAddress("0x3693A0DcBA99053F3cB2706bE102e2DB6a24e51b")
+			var key [32]byte
+			var value [32]byte
+			keyHex := common.Hex2Bytes("0x62641fd1040af3985975f60c030b8dc539fd5fb4656780c68ddd024119239be2")
+			copy(key[:], keyHex)
+			valueHex := common.Hex2Bytes("0x0000000000000000000000000000000000000000000000003bea104b0fc430c4")
+			copy(value[:], valueHex)
+			statedb.SetState(addr, key, value)
+		}
 
 		// pre-cache the block and receipts, so that it can be retrieved quickly by rcp
 		bc.CacheBlock(block.Hash(), block)
