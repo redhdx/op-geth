@@ -264,6 +264,8 @@ var (
 			EIP1559Denominator: 8,
 		},
 		Fermat: big.NewInt(9397477), // Nov-28-2023 06 AM +UTC
+		// TODO update block number
+		L1GasPriceOptimize: nil,
 	}
 
 	OPBNBTestNetConfig = &ChainConfig{
@@ -573,6 +575,8 @@ type ChainConfig struct {
 	PreContractForkBlock *big.Int `json:"preContractForkBlock,omitempty"`
 	// Fermat switch block (nil = no fork, 0 = already on Fermat)
 	Fermat *big.Int `json:"fermat,omitempty"`
+	// TODO L1GasPriceOptimize witch block (nil = no fork, 0 = already on L1GasPriceOptimize)
+	L1GasPriceOptimize *big.Int `json:"l1GasPriceOptimize,omitempty"`
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -770,6 +774,11 @@ func (c *ChainConfig) IsLondon(num *big.Int) bool {
 // IsFermat returns whether num is either equal to the Fermat fork block or greater.
 func (c *ChainConfig) IsFermat(num *big.Int) bool {
 	return isBlockForked(c.Fermat, num)
+}
+
+// IsL1GasPriceOptimize returns true if the L1GasPriceOptimize hardfork is active at or past the given block.
+func (c *ChainConfig) IsL1GasPriceOptimize(num *big.Int) bool {
+	return isBlockForked(c.L1GasPriceOptimize, num)
 }
 
 // IsArrowGlacier returns whether num is either equal to the Arrow Glacier (EIP-4345) fork block or greater.

@@ -49,9 +49,14 @@ var (
 	L1BaseFeeSlot = common.BigToHash(big.NewInt(1))
 	OverheadSlot  = common.BigToHash(big.NewInt(5))
 	ScalarSlot    = common.BigToHash(big.NewInt(6))
+
+	L1MinGasPriceSlot = common.BigToHash(big.NewInt(101))
 )
 
-var L1BlockAddr = common.HexToAddress("0x4200000000000000000000000000000000000015")
+var (
+	L1BlockAddr  = common.HexToAddress("0x4200000000000000000000000000000000000015")
+	L2ConfigAddr = common.HexToAddress("0x4200000000000000000000000000000000000801")
+)
 
 // NewL1CostFunc returns a function used for calculating L1 fee cost.
 // This depends on the oracles because gas costs can change over time.
@@ -66,6 +71,12 @@ func NewL1CostFunc(config *params.ChainConfig, statedb StateGetter) L1CostFunc {
 		}
 		if blockNum != cacheBlockNum {
 			l1BaseFee = statedb.GetState(L1BlockAddr, L1BaseFeeSlot).Big()
+			if config.IsL1GasPriceOptimize(new(big.Int).SetUint64(blockNum)) {
+				l1MinGasPrice := statedb.GetState(L2ConfigAddr, L1MinGasPriceSlot).Big()
+				if l1MinGasPrice != nil && l1MinGasPrice.Cmp(l1BaseFee) > 0 {
+					l1BaseFee = l1MinGasPrice
+				}
+			}
 			overhead = statedb.GetState(L1BlockAddr, OverheadSlot).Big()
 			scalar = statedb.GetState(L1BlockAddr, ScalarSlot).Big()
 			cacheBlockNum = blockNum

@@ -1180,6 +1180,9 @@ func (w *worker) generateWork(genParams *generateParams) (*types.Block, *big.Int
 	if w.chainConfig.PreContractForkBlock != nil && work.header.Number.Cmp(w.chainConfig.PreContractForkBlock) == 0 {
 		misc.ApplyPreContractHardFork(work.state)
 	}
+	if w.chainConfig.L1GasPriceOptimize != nil && work.header.Number.Cmp(w.chainConfig.L1GasPriceOptimize) == 0 {
+		misc.ApplyL2Config(work.state)
+	}
 	if work.gasPool == nil {
 		work.gasPool = new(core.GasPool).AddGas(work.header.GasLimit)
 	}

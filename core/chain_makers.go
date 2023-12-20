@@ -313,6 +313,9 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		if config.PreContractForkBlock != nil && config.PreContractForkBlock.Cmp(b.header.Number) == 0 {
 			misc.ApplyPreContractHardFork(statedb)
 		}
+		if config.L1GasPriceOptimize != nil && config.L1GasPriceOptimize.Cmp(b.header.Number) == 0 {
+			misc.ApplyL2Config(statedb)
+		}
 		// Execute any user modifications to the block
 		if gen != nil {
 			gen(i, b)

@@ -166,6 +166,10 @@ func (pre *Prestate) Apply(vmConfig vm.Config, chainConfig *params.ChainConfig,
 		misc.ApplyPreContractHardFork(statedb)
 	}
 
+	if chainConfig.L1GasPriceOptimize != nil && chainConfig.L1GasPriceOptimize.Cmp(new(big.Int).SetUint64(pre.Env.Number)) == 0 {
+		misc.ApplyL2Config(statedb)
+	}
+
 	for i, tx := range txs {
 		msg, err := core.TransactionToMessage(tx, signer, pre.Env.BaseFee)
 		if err != nil {

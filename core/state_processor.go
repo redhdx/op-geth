@@ -73,6 +73,9 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 	if p.config.PreContractForkBlock != nil && p.config.PreContractForkBlock.Cmp(block.Number()) == 0 {
 		misc.ApplyPreContractHardFork(statedb)
 	}
+	if p.config.L1GasPriceOptimize != nil && p.config.L1GasPriceOptimize.Cmp(block.Number()) == 0 {
+		misc.ApplyL2Config(statedb)
+	}
 	blockContext := NewEVMBlockContext(header, p.bc, nil, p.config, statedb)
 	vmenv := vm.NewEVM(blockContext, vm.TxContext{}, statedb, p.config, cfg)
 	// Iterate over and process the individual transactions
