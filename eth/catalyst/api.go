@@ -209,6 +209,7 @@ func (api *ConsensusAPI) verifyPayloadAttributes(attr *engine.PayloadAttributes)
 }
 
 func (api *ConsensusAPI) forkchoiceUpdated(update engine.ForkchoiceStateV1, payloadAttributes *engine.PayloadAttributes) (engine.ForkChoiceResponse, error) {
+	log.Info("neo reorg verify")
 	api.forkchoiceLock.Lock()
 	defer api.forkchoiceLock.Unlock()
 
