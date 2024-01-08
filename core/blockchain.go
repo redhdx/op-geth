@@ -2220,6 +2220,7 @@ func (bc *BlockChain) reorg(oldHead *types.Header, newHead *types.Block) error {
 	}
 	// Both sides of the reorg are at the same number, reduce both until the common
 	// ancestor is found
+	log.Info("neo reorg start")
 	for {
 		// If the common ancestor was found, bail out
 		if oldBlock.Hash() == newBlock.Hash() {
@@ -2228,10 +2229,12 @@ func (bc *BlockChain) reorg(oldHead *types.Header, newHead *types.Block) error {
 		}
 		// Remove an old block as well as stash away a new block
 		oldChain = append(oldChain, oldBlock)
+		log.Info("neo reorg oldBlock info ", "hash", oldBlock.Hash(), "number", oldBlock.Number())
 		for _, tx := range oldBlock.Transactions() {
 			deletedTxs = append(deletedTxs, tx.Hash())
 		}
 		newChain = append(newChain, newBlock)
+		log.Info("neo reorg newBlock info ", "hash", newBlock.Hash(), "number", newBlock.Number())
 
 		// Step back with both chains
 		oldBlock = bc.GetBlock(oldBlock.ParentHash(), oldBlock.NumberU64()-1)
@@ -2243,6 +2246,7 @@ func (bc *BlockChain) reorg(oldHead *types.Header, newHead *types.Block) error {
 			return fmt.Errorf("invalid new chain")
 		}
 	}
+	log.Info("neo reorg end")
 
 	// Ensure the user sees large reorgs
 	if len(oldChain) > 0 && len(newChain) > 0 {
@@ -2378,6 +2382,7 @@ func (bc *BlockChain) SetCanonical(head *types.Block) (common.Hash, error) {
 	// Run the reorg if necessary and set the given block as new head.
 	start := time.Now()
 	if head.ParentHash() != bc.CurrentBlock().Hash() {
+		log.Info("neo reorg start ", "parentHash", head.ParentHash(), "currentHash", bc.CurrentBlock().Hash())
 		if err := bc.reorg(bc.CurrentBlock(), head); err != nil {
 			return common.Hash{}, err
 		}
