@@ -212,7 +212,7 @@ func (api *ConsensusAPI) forkchoiceUpdated(update engine.ForkchoiceStateV1, payl
 	api.forkchoiceLock.Lock()
 	defer api.forkchoiceLock.Unlock()
 
-	log.Info("Engine API request received", "method", "ForkchoiceUpdated", "head", update.HeadBlockHash, "finalized", update.FinalizedBlockHash, "safe", update.SafeBlockHash)
+	log.Info("neo check Engine API request received", "method", "ForkchoiceUpdated", "head", update.HeadBlockHash, "finalized", update.FinalizedBlockHash, "safe", update.SafeBlockHash)
 	if update.HeadBlockHash == (common.Hash{}) {
 		log.Warn("Forkchoice requested update to zero hash")
 		return engine.STATUS_INVALID, nil // TODO(karalabe): Why does someone send us this?
@@ -370,6 +370,7 @@ func (api *ConsensusAPI) forkchoiceUpdated(update engine.ForkchoiceStateV1, payl
 		// If we already are busy generating this work, then we do not need
 		// to start a second process.
 		if api.localBlocks.has(id) {
+			log.Info("neo check re-generate work", "id", id)
 			return valid(&id), nil
 		}
 		log.Info("neo check buildPayLoad", "noTxPool", args.NoTxPool)
@@ -378,8 +379,11 @@ func (api *ConsensusAPI) forkchoiceUpdated(update engine.ForkchoiceStateV1, payl
 			log.Error("Failed to build payload", "err", err)
 			return valid(nil), engine.InvalidPayloadAttributes.With(err)
 		}
+		log.Info("neo check payload", "id", id)
 		api.localBlocks.put(id, payload)
 		return valid(&id), nil
+	} else {
+		log.Info("neo check buildPayLoad no PayloadAttributes")
 	}
 	return valid(nil), nil
 }
@@ -429,9 +433,10 @@ func (api *ConsensusAPI) GetPayloadV2(payloadID engine.PayloadID) (*engine.Execu
 }
 
 func (api *ConsensusAPI) getPayload(payloadID engine.PayloadID) (*engine.ExecutionPayloadEnvelope, error) {
-	log.Info("Engine API request received", "method", "GetPayload", "id", payloadID)
+	log.Info("neo check Engine API request received", "method", "GetPayload", "id", payloadID)
 	data := api.localBlocks.get(payloadID)
 	if data == nil {
+		log.Info("neo check GetPayload failed")
 		return nil, engine.UnknownPayload
 	}
 	return data, nil
@@ -474,7 +479,7 @@ func (api *ConsensusAPI) newPayload(params engine.ExecutableData) (engine.Payloa
 	api.newPayloadLock.Lock()
 	defer api.newPayloadLock.Unlock()
 
-	log.Trace("Engine API request received", "method", "NewPayload", "number", params.Number, "hash", params.BlockHash)
+	log.Info("neo check Engine API request received", "method", "NewPayload", "number", params.Number, "hash", params.BlockHash)
 	block, err := engine.ExecutableDataToBlock(params)
 	if err != nil {
 		log.Debug("Invalid NewPayload params", "params", params, "error", err)

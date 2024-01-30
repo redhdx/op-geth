@@ -1204,7 +1204,7 @@ func (w *worker) generateWork(genParams *generateParams) (*types.Block, *big.Int
 
 		err := w.fillTransactions(interrupt, work)
 		if errors.Is(err, errBlockInterruptedByTimeout) {
-			log.Warn("Block building is interrupted", "allowance", common.PrettyDuration(w.newpayloadTimeout))
+			log.Warn("neo check Block building is interrupted", "allowance", common.PrettyDuration(w.newpayloadTimeout), "blockNumber", work.header.Number, "gasUsed", work.header.GasUsed)
 		}
 	}
 	block, err := w.engine.FinalizeAndAssemble(w.chain, work.header, work.state, work.txs, work.unclelist(), work.receipts, genParams.withdrawals)
@@ -1212,6 +1212,7 @@ func (w *worker) generateWork(genParams *generateParams) (*types.Block, *big.Int
 		log.Error("neo check FinalizeAndAssemble error", "error", err)
 		return nil, nil, nil, err
 	}
+	log.Info("neo check fillTransactions", "blockNumber", block.NumberU64(), "gasUsed", block.GasUsed())
 	return block, totalFees(block, work.receipts), work, nil
 }
 
@@ -1343,7 +1344,10 @@ func (w *worker) getSealingBlock(parent common.Hash, timestamp uint64, coinbase 
 	}
 	select {
 	case w.getWorkCh <- req:
+		start := time.Now()
+		log.Info("neo check get worker request", "parentHash", req.params.parentHash)
 		result := <-req.result
+		log.Info("neo check get worker result", "parentHash", req.params.parentHash, "elapsed", common.PrettyDuration(time.Since(start)))
 		if result.err != nil {
 			return nil, nil, nil, result.err
 		}

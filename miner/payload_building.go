@@ -95,7 +95,7 @@ func newPayload(empty *types.Block, id engine.PayloadID) *Payload {
 		empty: empty,
 		stop:  make(chan struct{}),
 	}
-	log.Info("Starting work on payload", "id", payload.id)
+	log.Info("neo check Starting work on payload", "id", payload.id)
 	payload.cond = sync.NewCond(&payload.lock)
 	return payload
 }
@@ -107,6 +107,7 @@ func (payload *Payload) update(block *types.Block, fees *big.Int, elapsed time.D
 
 	select {
 	case <-payload.stop:
+		log.Info("neo check stale update", "id", payload.id)
 		return // reject stale update
 	default:
 	}
@@ -118,7 +119,7 @@ func (payload *Payload) update(block *types.Block, fees *big.Int, elapsed time.D
 		payload.fullFees = fees
 
 		feesInEther := new(big.Float).Quo(new(big.Float).SetInt(fees), big.NewFloat(params.Ether))
-		log.Info("Updated payload", "id", payload.id, "number", block.NumberU64(), "hash", block.Hash(),
+		log.Info("neo check Updated payload", "id", payload.id, "number", block.NumberU64(), "hash", block.Hash(),
 			"txs", len(block.Transactions()), "gas", block.GasUsed(), "fees", feesInEther,
 			"root", block.Root(), "elapsed", common.PrettyDuration(elapsed))
 
@@ -184,12 +185,14 @@ func (w *worker) buildPayload(args *BuildPayloadArgs) (*Payload, error) {
 	start := time.Now()
 	empty, _, _, err := w.getSealingBlock(args.Parent, args.Timestamp, args.FeeRecipient, args.Random, args.Withdrawals, true, args.Transactions, args.GasLimit)
 	if err != nil {
+		log.Info("neo check Failed to getSealingBlock")
 		return nil, err
 	}
-	log.Info("Built initial payload", "id", args.Id(), "number", empty.NumberU64(), "hash", empty.Hash(), "elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info("neo check Built initial payload", "id", args.Id(), "number", empty.NumberU64(), "hash", empty.Hash(), "elapsed", common.PrettyDuration(time.Since(start)))
 	// Construct a payload object for return.
 	payload := newPayload(empty, args.Id())
 	if args.NoTxPool { // don't start the background payload updating job if there is no tx pool to pull from
+		log.Info("neo check empty block", "id", payload.id)
 		return payload, nil
 	}
 
@@ -212,20 +215,21 @@ func (w *worker) buildPayload(args *BuildPayloadArgs) (*Payload, error) {
 				start := time.Now()
 				block, fees, env, err := w.getSealingBlock(args.Parent, args.Timestamp, args.FeeRecipient, args.Random, args.Withdrawals, false, args.Transactions, args.GasLimit)
 				if err != nil {
-					log.Error("Failed to build updated payload", "id", payload.id, "err", err)
+					log.Error("neo check Failed to build updated payload", "id", payload.id, "err", err)
 					return
 				}
 
-				log.Info("Built updated payload", "id", payload.id, "number", block.NumberU64(), "hash", block.Hash(), "elapsed", common.PrettyDuration(time.Since(start)), "recommit", w.recommit)
+				log.Info("neo check Built updated payload", "id", payload.id, "number", block.NumberU64(), "hash", block.Hash(),
+					"elapsed", common.PrettyDuration(time.Since(start)), "recommit", w.recommit, "tx", len(block.Transactions()), "gasUsed", block.GasUsed())
 				payload.update(block, fees, time.Since(start), func() {
 					w.cacheMiningBlock(block, env)
 				})
 				timer.Reset(w.recommit)
 			case <-payload.stop:
-				log.Info("Stopping work on payload", "id", payload.id, "reason", "delivery")
+				log.Info("neo check Stopping work on payload", "id", payload.id, "reason", "delivery")
 				return
 			case <-endTimer.C:
-				log.Info("Stopping work on payload", "id", payload.id, "reason", "timeout")
+				log.Info("neo check Stopping work on payload", "id", payload.id, "reason", "timeout")
 				return
 			}
 		}
@@ -266,6 +270,6 @@ func (w *worker) cacheMiningBlock(block *types.Block, env *environment) {
 	w.chain.CacheMiningTxLogs(hash, logs)
 	w.chain.CacheMiningState(hash, env.state)
 
-	log.Info("Successfully cached sealed new block", "number", block.Number(), "root", block.Root(), "hash", hash,
+	log.Info("neo check Successfully cached sealed new block", "number", block.Number(), "root", block.Root(), "hash", hash,
 		"elapsed", common.PrettyDuration(time.Since(start)))
 }
