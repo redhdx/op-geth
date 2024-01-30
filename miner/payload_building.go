@@ -143,8 +143,10 @@ func (payload *Payload) Resolve() *engine.ExecutionPayloadEnvelope {
 		close(payload.stop)
 	}
 	if payload.full != nil {
+		log.Info("neo check resolve payload is full", "payload.full.Number", payload.full.Number())
 		return engine.BlockToExecutableData(payload.full, payload.fullFees)
 	}
+	log.Info("neo check resolve payload is not full", "payload.empty.Number", payload.empty.Number())
 	return engine.BlockToExecutableData(payload.empty, big.NewInt(0))
 }
 
@@ -184,7 +186,7 @@ func (w *worker) buildPayload(args *BuildPayloadArgs) (*Payload, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("Built initial payload", "id", args.Id(), "number", empty.NumberU64(), "hash", empty.Hash(), "elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info("Built initial payload", "id", args.Id(), "number", empty.NumberU64(), "hash", empty.Hash(), "elapsed", common.PrettyDuration(time.Since(start)))
 	// Construct a payload object for return.
 	payload := newPayload(empty, args.Id())
 	if args.NoTxPool { // don't start the background payload updating job if there is no tx pool to pull from
@@ -214,7 +216,7 @@ func (w *worker) buildPayload(args *BuildPayloadArgs) (*Payload, error) {
 					return
 				}
 
-				log.Debug("Built updated payload", "id", payload.id, "number", block.NumberU64(), "hash", block.Hash(), "elapsed", common.PrettyDuration(time.Since(start)))
+				log.Info("Built updated payload", "id", payload.id, "number", block.NumberU64(), "hash", block.Hash(), "elapsed", common.PrettyDuration(time.Since(start)), "recommit", w.recommit)
 				payload.update(block, fees, time.Since(start), func() {
 					w.cacheMiningBlock(block, env)
 				})

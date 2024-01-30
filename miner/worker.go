@@ -1209,6 +1209,7 @@ func (w *worker) generateWork(genParams *generateParams) (*types.Block, *big.Int
 	}
 	block, err := w.engine.FinalizeAndAssemble(w.chain, work.header, work.state, work.txs, work.unclelist(), work.receipts, genParams.withdrawals)
 	if err != nil {
+		log.Error("neo check FinalizeAndAssemble error", "error", err)
 		return nil, nil, nil, err
 	}
 	return block, totalFees(block, work.receipts), work, nil

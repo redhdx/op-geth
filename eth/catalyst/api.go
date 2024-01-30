@@ -212,7 +212,7 @@ func (api *ConsensusAPI) forkchoiceUpdated(update engine.ForkchoiceStateV1, payl
 	api.forkchoiceLock.Lock()
 	defer api.forkchoiceLock.Unlock()
 
-	log.Trace("Engine API request received", "method", "ForkchoiceUpdated", "head", update.HeadBlockHash, "finalized", update.FinalizedBlockHash, "safe", update.SafeBlockHash)
+	log.Info("Engine API request received", "method", "ForkchoiceUpdated", "head", update.HeadBlockHash, "finalized", update.FinalizedBlockHash, "safe", update.SafeBlockHash)
 	if update.HeadBlockHash == (common.Hash{}) {
 		log.Warn("Forkchoice requested update to zero hash")
 		return engine.STATUS_INVALID, nil // TODO(karalabe): Why does someone send us this?
@@ -372,6 +372,7 @@ func (api *ConsensusAPI) forkchoiceUpdated(update engine.ForkchoiceStateV1, payl
 		if api.localBlocks.has(id) {
 			return valid(&id), nil
 		}
+		log.Info("neo check buildPayLoad", "noTxPool", args.NoTxPool)
 		payload, err := api.eth.Miner().BuildPayload(args)
 		if err != nil {
 			log.Error("Failed to build payload", "err", err)
@@ -428,7 +429,7 @@ func (api *ConsensusAPI) GetPayloadV2(payloadID engine.PayloadID) (*engine.Execu
 }
 
 func (api *ConsensusAPI) getPayload(payloadID engine.PayloadID) (*engine.ExecutionPayloadEnvelope, error) {
-	log.Trace("Engine API request received", "method", "GetPayload", "id", payloadID)
+	log.Info("Engine API request received", "method", "GetPayload", "id", payloadID)
 	data := api.localBlocks.get(payloadID)
 	if data == nil {
 		return nil, engine.UnknownPayload
