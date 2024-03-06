@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/holiman/uint256"
 	"runtime"
 	"sync"
 )
@@ -178,7 +177,7 @@ func doOpcodesProcess(code []byte) (OptCode, error) {
 }
 
 func doCodeFusion(code []byte) ([]byte, error) {
-	fusedCode := make([]byte, len(code))
+	/*fusedCode := make([]byte, len(code))
 	length := copy(fusedCode, code)
 	skipToNext := false
 	for i := 0; i < length; i++ {
@@ -372,6 +371,8 @@ func doCodeFusion(code []byte) ([]byte, error) {
 		}
 	}
 	return fusedCode, nil
+	*/
+	return code, nil
 }
 
 func calculateSkipSteps(code []byte, cur int) (skip bool, steps int) {
