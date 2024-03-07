@@ -83,20 +83,21 @@ func NewContract(caller ContractRef, object ContractRef, value *big.Int, gas uin
 }
 
 func (c *Contract) validJumpdest(dest *uint256.Int) bool {
-	udest, overflow := dest.Uint64WithOverflow()
-	// PC cannot go beyond len(code) and certainly can't be bigger than 63bits.
-	// Don't bother checking for JUMPDEST in that case.
-	if overflow || udest >= uint64(len(c.Code)) {
-		return false
-	}
-	// Only JUMPDESTs allowed for destinations
-	if OpCode(c.Code[udest]) != JUMPDEST {
-		return false
-	}
-	if c.isCode(udest) {
-		return true
-	}
-	return false
+	return true
+	//udest, overflow := dest.Uint64WithOverflow()
+	//// PC cannot go beyond len(code) and certainly can't be bigger than 63bits.
+	//// Don't bother checking for JUMPDEST in that case.
+	//if overflow || udest >= uint64(len(c.Code)) {
+	//	return false
+	//}
+	//// Only JUMPDESTs allowed for destinations
+	//if OpCode(c.Code[udest]) != JUMPDEST {
+	//	return false
+	//}
+	//if c.isCode(udest) {
+	//	return true
+	//}
+	//return false
 }
 
 // isCode returns true if the provided PC location is an actual opcode, as
