@@ -18,6 +18,7 @@ package vm
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/holiman/uint256"
 	"math/big"
 )
@@ -82,10 +83,17 @@ func NewContract(caller ContractRef, object ContractRef, value *big.Int, gas uin
 	return c
 }
 
+var optimizedCount int
+var count int
+
 func (c *Contract) validJumpdest(dest *uint256.Int) bool {
 	if c.optimized {
+		optimizedCount++
+		log.Info("validJumpdest use optimizedCount", optimizedCount)
 		return true
 	}
+	count++
+	log.Info("validJumpdest not use optimizedCount", count)
 	udest, overflow := dest.Uint64WithOverflow()
 	// PC cannot go beyond len(code) and certainly can't be bigger than 63bits.
 	// Don't bother checking for JUMPDEST in that case.
