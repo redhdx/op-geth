@@ -89,11 +89,11 @@ var count int
 func (c *Contract) validJumpdest(dest *uint256.Int) bool {
 	if c.optimized {
 		optimizedCount++
-		log.Info("validJumpdest use optimizedCount", optimizedCount)
+		log.Info("validJumpdest use optimizedCount", "optimizedCount", optimizedCount)
 		return true
 	}
 	count++
-	log.Info("validJumpdest not use optimizedCount", count)
+	log.Info("validJumpdest not use optimizedCount", "count", count)
 	udest, overflow := dest.Uint64WithOverflow()
 	// PC cannot go beyond len(code) and certainly can't be bigger than 63bits.
 	// Don't bother checking for JUMPDEST in that case.
