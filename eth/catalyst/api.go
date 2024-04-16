@@ -350,8 +350,9 @@ func (api *ConsensusAPI) forkchoiceUpdated(update engine.ForkchoiceStateV1, payl
 			log.Warn("Final block not available in database", "hash", update.FinalizedBlockHash)
 			return engine.STATUS_INVALID, engine.InvalidForkChoiceState.With(errors.New("final block not available in database"))
 		} else if rawdb.ReadCanonicalHash(api.eth.ChainDb(), finalBlock.NumberU64()) != update.FinalizedBlockHash {
-			neoBlockHash := rawdb.ReadCanonicalHash(api.eth.ChainDb(), finalBlock.NumberU64())
-			log.Warn("Final block not in canonical chain", "number", block.NumberU64(), "hash", update.HeadBlockHash, "from CanonicalHash", neoBlockHash)
+			canonicalFinalBlockHash := rawdb.ReadCanonicalHash(api.eth.ChainDb(), finalBlock.NumberU64())
+			log.Warn("Final block not in canonical chain", "updateBlockNumber", block.NumberU64(), "updateBlockHash", update.HeadBlockHash,
+				"updateFinalizedBlockHash", update.FinalizedBlockHash, "finalBlockNumber", finalBlock.NumberU64(), "canonicalFinalBlockHash", canonicalFinalBlockHash)
 			return engine.STATUS_INVALID, engine.InvalidForkChoiceState.With(errors.New("final block not in canonical chain"))
 		}
 		// Set the finalized block
