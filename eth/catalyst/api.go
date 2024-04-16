@@ -40,9 +40,9 @@ import (
 
 var (
 	forkchoiceUpdateAttributesTimer = metrics.NewRegisteredTimer("api/engine/forkchoiceUpdate/attributes", nil)
-	forkchoiceUpdateHeadsTimer = metrics.NewRegisteredTimer("api/engine/forkchoiceUpdate/heads", nil)
-	getPayloadTimer = metrics.NewRegisteredTimer("api/engine/get/payload", nil)
-	newPayloadTimer = metrics.NewRegisteredTimer("api/engine/new/payload", nil)
+	forkchoiceUpdateHeadsTimer      = metrics.NewRegisteredTimer("api/engine/forkchoiceUpdate/heads", nil)
+	getPayloadTimer                 = metrics.NewRegisteredTimer("api/engine/get/payload", nil)
+	newPayloadTimer                 = metrics.NewRegisteredTimer("api/engine/new/payload", nil)
 )
 
 // Register adds the engine API to the full node.
@@ -350,7 +350,8 @@ func (api *ConsensusAPI) forkchoiceUpdated(update engine.ForkchoiceStateV1, payl
 			log.Warn("Final block not available in database", "hash", update.FinalizedBlockHash)
 			return engine.STATUS_INVALID, engine.InvalidForkChoiceState.With(errors.New("final block not available in database"))
 		} else if rawdb.ReadCanonicalHash(api.eth.ChainDb(), finalBlock.NumberU64()) != update.FinalizedBlockHash {
-			log.Warn("Final block not in canonical chain", "number", block.NumberU64(), "hash", update.HeadBlockHash)
+			neoBlockHash := rawdb.ReadCanonicalHash(api.eth.ChainDb(), finalBlock.NumberU64())
+			log.Warn("Final block not in canonical chain", "number", block.NumberU64(), "hash", update.HeadBlockHash, "from CanonicalHash", neoBlockHash)
 			return engine.STATUS_INVALID, engine.InvalidForkChoiceState.With(errors.New("final block not in canonical chain"))
 		}
 		// Set the finalized block
@@ -468,10 +469,10 @@ func (api *ConsensusAPI) GetPayloadV3(payloadID engine.PayloadID) (*engine.Execu
 
 func (api *ConsensusAPI) getPayload(payloadID engine.PayloadID, full bool) (*engine.ExecutionPayloadEnvelope, error) {
 	start := time.Now()
-	defer func () {
+	defer func() {
 		getPayloadTimer.UpdateSince(start)
 		log.Debug("getPayloadTimer", "duration", common.PrettyDuration(time.Since(start)), "id", payloadID)
-	} ()
+	}()
 	log.Trace("Engine API request received", "method", "GetPayload", "id", payloadID)
 	data := api.localBlocks.get(payloadID, full)
 	if data == nil {
@@ -527,10 +528,10 @@ func (api *ConsensusAPI) NewPayloadV3(params engine.ExecutableData, versionedHas
 
 func (api *ConsensusAPI) newPayload(params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash) (engine.PayloadStatusV1, error) {
 	start := time.Now()
-	defer func () {
+	defer func() {
 		newPayloadTimer.UpdateSince(start)
 		log.Debug("newPayloadTimer", "duration", common.PrettyDuration(time.Since(start)), "parentHash", params.ParentHash)
-	} ()
+	}()
 
 	// The locking here is, strictly, not required. Without these locks, this can happen:
 	//
