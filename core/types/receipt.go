@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/log"
 	"io"
 	"math/big"
 	"unsafe"
@@ -587,7 +588,9 @@ func (rs Receipts) DeriveFields(config *params.ChainConfig, hash common.Hash, nu
 			rs[i].L1GasPrice = gasParams.l1BaseFee
 			rs[i].L1BlobBaseFee = gasParams.l1BlobBaseFee
 			rs[i].L1Fee, rs[i].L1GasUsed = gasParams.costFunc(txs[i].RollupCostData())
-			if txs[i].GasPrice().Cmp(big.NewInt(0)) == 0 && config.IsWright(time) {
+			log.Info("receipt tx hash, gasprice, tipcap, feecap ", txs[i].hash, txs[i].GasPrice(), txs[i].GasTipCap(), txs[i].GasFeeCap())
+			if (txs[i].GasPrice().Cmp(big.NewInt(0)) == 0 ||
+				txs[i].GasTipCap().Cmp(big.NewInt(0)) == 0) && config.IsWright(time) {
 				rs[i].L1Fee = big.NewInt(0)
 			}
 			rs[i].FeeScalar = gasParams.feeScalar

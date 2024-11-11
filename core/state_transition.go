@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/log"
 	"math"
 	"math/big"
 	"time"
@@ -179,6 +180,7 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 	}
 	// If baseFee provided, set gasPrice to effectiveGasPrice.
 	if baseFee != nil {
+		log.Info("msg hash, gasprice, gastipcap, gasFeeCap", tx.Hash(), msg.GasPrice, msg.GasTipCap, msg.GasFeeCap)
 		msg.GasPrice = cmath.BigMin(msg.GasPrice.Add(msg.GasTipCap, baseFee), msg.GasFeeCap)
 	}
 	var err error
