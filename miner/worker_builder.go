@@ -373,6 +373,7 @@ func (w *worker) simulateBundle(
 
 		snap := state.Snapshot()
 		gp := gasPool.Gas()
+		log.Info("gp is ", gp)
 
 		receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, &w.coinbase, gasPool, state, env.header, tx,
 			&tempGasUsed, *w.chain.GetVMConfig())
@@ -401,6 +402,9 @@ func (w *worker) simulateBundle(
 			// for unRevertible tx but itself can be dropped, we drop it and revert the state and gas pool
 			if containsHash(bundle.DroppingTxHashes, receipt.TxHash) {
 				log.Warn("drop tx in bundle", "hash", receipt.TxHash.String())
+				log.Info("status failed, snap is ", snap)
+				log.Info("status failed, gp is ", gasPool.Gas())
+				state.RevertToSnapshot(snap)
 				gasPool.SetGas(gp)
 				continue
 			}

@@ -916,6 +916,10 @@ func (s *StateDB) RevertToSnapshot(revid int) {
 		return s.validRevisions[i].id >= revid
 	})
 	if idx == len(s.validRevisions) || s.validRevisions[idx].id != revid {
+		log.Info("idx, ", idx)
+		log.Info("len(s.validRevisions) ", len(s.validRevisions))
+		log.Info("s.validRevisions[idx].id ", s.validRevisions[idx].id)
+		log.Info("revid ", revid)
 		panic(fmt.Errorf("revision id %v cannot be reverted", revid))
 	}
 	snapshot := s.validRevisions[idx].journalIndex
